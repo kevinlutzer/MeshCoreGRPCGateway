@@ -1,0 +1,33 @@
+name: meshcore-grpc
+base: core26
+version: "0.1.0"
+summary: gRPC server bridging MeshCore radio nodes over serial
+description: |
+  Exposes a gRPC interface (SendMessage, ReceiveMessage, Reset,
+  CreateContact, SearchContact, DeleteContact, Healthcheck) backed by
+  a MeshCore companion radio node connected via serial port.
+
+grade: stable
+confinement: classic
+
+apps:
+  meshcore-grpc:
+    command: bin/meshcore-grpc
+    daemon: simple
+    restart-condition: on-failure
+    environment:
+      MESHCORE_SERIAL_PORT: /dev/ttyUSB0
+      MESHCORE_BAUD_RATE: "115200"
+      GRPC_LISTEN_ADDR: "[::]:50051"
+      RUST_LOG: info
+
+parts:
+  meshcore-grpc:
+    plugin: rust
+    source: .
+    build-packages:
+      - pkg-config
+      - libssl-dev
+      - protobuf-compiler
+    stage-packages:
+      - libssl3
