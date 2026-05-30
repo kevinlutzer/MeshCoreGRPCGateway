@@ -13,7 +13,7 @@ use app_env::{
     get_baud_rate, get_grpc_listen_addr, get_serial_port, load_or_create_env_file, setup_tracing,
 };
 use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
-use server::MeshCoreServiceImpl;
+use server::MeshCoreService;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::<dyn std::error::Error>::from(format!("invalid GRPC_LISTEN_ADDR: {e}"))
     })?;
 
-    let service = MeshCoreServiceImpl::new(commands);
+    let service = MeshCoreService::new(commands);
 
     info!(%addr, "gRPC server listening");
 
