@@ -11,10 +11,15 @@ grade: stable
 confinement: strict
 
 apps:
-  meshhat-controller:
-    command: bin/MeshHatController
+  cli:
+    command: bin/cli
+    plugs: [network]
+
+  server:
+    command: bin/server
     daemon: simple
     restart-condition: on-failure
+    plugs: [network, serial-port, gpio-control]
 
 parts:
   meshhat-controller:
