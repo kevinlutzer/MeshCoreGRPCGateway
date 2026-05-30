@@ -1,59 +1,42 @@
+mod app_env;
 mod server;
-
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tonic::transport::Server;
-use tracing::{error, info};
-
-use meshcore_rs::MeshCore;
-
-pub mod meshcore_proto {
+mod meshcore_proto {
     tonic::include_proto!("meshcore");
 }
 
+use tonic::transport::Server;
+use tracing::{error, info, instrument::WithSubscriber};
+
+use meshcore_rs::MeshCore;
+
+use app_env::{load_or_create_env_file, get_baud_rate, get_grpc_listen_addr, get_serial_port, setup_tracing};
 use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 use server::MeshCoreServiceImpl;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialise tracing; honour RUST_LOG env var (default: info).
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-        )
-        .init();
+    load_or_create_env_file().await?;
 
-    // ── Configuration ────────────────────────────────────────────────────────
-    let serial_port =
-        std::env::var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
+    setup_tracing().await;
 
-    let baud_rate: u32 = std::env::var("MESHCORE_BAUD_RATE")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(115_200);
-
-    let listen_addr =
-        std::env::var("GRPC_LISTEN_ADDR").unwrap_or_else(|_| "[::]:50051".to_string());
-
+    let port = get_serial_port();
+    let baud_rate = get_baud_rate();
+    let listen_addr = get_grpc_listen_addr();
     info!(
-        port = %serial_port,
-        baud = baud_rate,
-        listen = %listen_addr,
-        "Starting meshcore-grpc"
+        "Starting the service with serial port = {}, baud rate = {}, gRPC listen address = {}",
+        port, baud_rate, listen_addr
     );
 
     // ── Initialise MeshCore SDK over serial ──────────────────────────────────
-    let meshcore = MeshCore::serial(&serial_port, baud_rate)
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to open serial connection");
-            e
-        })?;
+    let meshcore = MeshCore::serial(&port, baud_rate).await.map_err(|e| {
+        error!(error = %e, "Failed to open serial connection");
+        e
+    })?;
+
+    let commands= meshcore.commands();
 
     // Verify connectivity and log the device name.
-    let self_info = meshcore
-        .commands()
+    let self_info = commands.clone()
         .lock()
         .await
         .send_appstart()
@@ -63,10 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             e
         })?;
 
-    info!(device = %self_info.name, "Connected to MeshCore device");
-
-    // Shared command handler passed into every RPC handler.
-    let commands: Arc<Mutex<meshcore_rs::commands::CommandHandler>> = meshcore.commands();
+    info!("Connected to MeshCore device {}", self_info.name);
 
     // ── gRPC server ──────────────────────────────────────────────────────────
     let addr = listen_addr.parse().map_err(|e| {
@@ -81,6 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
         .add_service(MeshCoreServiceServer::new(service))
         .serve(addr)
+        .with_current_subscriber()
         .await?;
 
     Ok(())

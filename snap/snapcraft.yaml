@@ -1,4 +1,4 @@
-name: meshcore-grpc
+name: meshhat-controller
 base: core26
 version: "0.1.0"
 summary: gRPC server bridging MeshCore radio nodes over serial
@@ -11,15 +11,10 @@ grade: stable
 confinement: classic
 
 apps:
-  meshcore-grpc:
-    command: bin/meshcore-grpc
+  meshhat-controller:
+    command: bin/meshhat-controller
     daemon: simple
     restart-condition: on-failure
-    environment:
-      MESHCORE_SERIAL_PORT: /dev/ttyUSB0
-      MESHCORE_BAUD_RATE: "115200"
-      GRPC_LISTEN_ADDR: "[::]:50051"
-      RUST_LOG: info
 
 parts:
   meshcore-grpc:

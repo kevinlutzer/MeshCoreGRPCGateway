@@ -1,7 +1,5 @@
 use std::sync::Arc;
-use std::time::Duration;
 
-use hex::FromHex;
 use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
 use tracing::{error, info};
@@ -20,8 +18,6 @@ use crate::meshcore_proto::{
     send_message_request::Destination as ProtoDestination,
 };
 
-// ── Helper ────────────────────────────────────────────────────────────────────
-
 /// Decode a 64-character hex string into a 32-byte array.
 fn decode_pubkey(hex_str: &str) -> Result<[u8; 32], Status> {
     let bytes = Vec::<u8>::from_hex(hex_str)
@@ -31,19 +27,15 @@ fn decode_pubkey(hex_str: &str) -> Result<[u8; 32], Status> {
         .map_err(|_| Status::invalid_argument("pubkey must be exactly 32 bytes (64 hex chars)"))
 }
 
-// ── Service struct ────────────────────────────────────────────────────────────
-
 pub struct MeshCoreServiceImpl {
     commands: Arc<Mutex<CommandHandler>>,
 }
 
 impl MeshCoreServiceImpl {
-    pub fn new(commands: Arc<Mutex<CommandHandler>>) -> Self {
-        Self { commands }
+    pub fn new(commands: &Arc<Mutex<CommandHandler>>) -> Self {
+        Self { commands: commands.clone() }
     }
 }
-
-// ── RPC implementations ───────────────────────────────────────────────────────
 
 #[tonic::async_trait]
 impl MeshCoreService for MeshCoreServiceImpl {
@@ -54,25 +46,17 @@ impl MeshCoreService for MeshCoreServiceImpl {
     ) -> Result<Response<SendMessageResponse>, Status> {
         let req = request.into_inner();
         let text = &req.text;
-        let timestamp = if req.timestamp == 0 {
-            None
-        } else {
-            Some(req.timestamp)
-        };
+        let timestamp = req.timestamp;
 
-        let mut cmd = self.commands.lock().await;
-
+        let cmd = self.commands.lock().await;
         let result = match req.destination {
             Some(ProtoDestination::ContactPubkeyHex(ref hex)) => {
-                info!(dest = %hex, "SendMessage → contact");
-                let key = decode_pubkey(hex)?;
-                cmd.send_msg(Destination::PublicKey(key), text, timestamp)
+                cmd.send_msg(Destination::Hex(hex.to_string()), text, timestamp)
                     .await
                     .map(|_| ())
                     .map_err(|e| e.to_string())
             }
             Some(ProtoDestination::ChannelIndex(idx)) => {
-                info!(channel = idx, "SendMessage → channel");
                 cmd.send_channel_msg(idx as u8, text, timestamp)
                     .await
                     .map_err(|e| e.to_string())
@@ -83,6 +67,8 @@ impl MeshCoreService for MeshCoreServiceImpl {
                 ));
             }
         };
+
+        drop(cmd);
 
         match result {
             Ok(()) => Ok(Response::new(SendMessageResponse {
@@ -99,7 +85,6 @@ impl MeshCoreService for MeshCoreServiceImpl {
         }
     }
 
-    // ── ReceiveMessage ────────────────────────────────────────────────────────
     async fn receive_message(
         &self,
         _request: Request<ReceiveMessageRequest>,
@@ -159,46 +144,13 @@ impl MeshCoreService for MeshCoreServiceImpl {
         Ok(Response::new(resp))
     }
 
-    // ── Reset ─────────────────────────────────────────────────────────────────
     async fn reset(
         &self,
-        request: Request<ResetRequest>,
+        _: Request<ResetRequest>,
     ) -> Result<Response<ResetResponse>, Status> {
-        let req = request.into_inner();
-        let pin_number = req.gpio_pin;
-        let hold_ms = if req.hold_ms == 0 { 200 } else { req.hold_ms };
-
-        info!(gpio_pin = pin_number, hold_ms = hold_ms, "Reset");
-
-        let result: Result<(), String> = (|| {
-            use rppal::gpio::Gpio;
-            let gpio = Gpio::new().map_err(|e| e.to_string())?;
-            let mut pin = gpio
-                .get(pin_number as u8)
-                .map_err(|e| e.to_string())?
-                .into_output();
-            pin.set_low();
-            std::thread::sleep(Duration::from_millis(hold_ms as u64));
-            pin.set_high();
-            Ok(())
-        })();
-
-        match result {
-            Ok(()) => Ok(Response::new(ResetResponse {
-                success: true,
-                error: String::new(),
-            })),
-            Err(e) => {
-                error!(error = %e, "Reset failed");
-                Ok(Response::new(ResetResponse {
-                    success: false,
-                    error: e,
-                }))
-            }
-        }
+        Ok(Response::new(ResetResponse {}))
     }
 
-    // ── CreateContact ─────────────────────────────────────────────────────────
     async fn create_contact(
         &self,
         request: Request<CreateContactRequest>,
@@ -241,7 +193,6 @@ impl MeshCoreService for MeshCoreServiceImpl {
         }
     }
 
-    // ── SearchContact ─────────────────────────────────────────────────────────
     async fn search_contact(
         &self,
         request: Request<SearchContactRequest>,
@@ -288,10 +239,8 @@ impl MeshCoreService for MeshCoreServiceImpl {
         let req = request.into_inner();
         info!(pubkey = %req.public_key_hex, "DeleteContact");
 
-        let key = decode_pubkey(&req.public_key_hex)?;
-
-        let mut cmd = self.commands.lock().await;
-        match cmd.remove_contact(Destination::PublicKey(key)).await {
+        let cmd = self.commands.lock().await;
+        match cmd.remove_contact(Destination::Hex(req.public_key_hex)).await {
             Ok(()) => Ok(Response::new(DeleteContactResponse {
                 success: true,
                 error: String::new(),
@@ -306,14 +255,13 @@ impl MeshCoreService for MeshCoreServiceImpl {
         }
     }
 
-    // ── Healthcheck ───────────────────────────────────────────────────────────
     async fn healthcheck(
         &self,
         _request: Request<HealthcheckRequest>,
     ) -> Result<Response<HealthcheckResponse>, Status> {
         info!("Healthcheck");
 
-        let mut cmd = self.commands.lock().await;
+        let cmd = self.commands.lock().await;
         match cmd.send_appstart().await {
             Ok(info) => {
                 info!(device = %info.name, "Healthcheck OK");

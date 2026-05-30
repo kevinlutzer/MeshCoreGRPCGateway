@@ -6,10 +6,11 @@ version = 4
 name = "MeshHatController"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "dotenv",
  "hex",
  "meshcore-rs",
  "prost",
- "rppal",
  "tokio",
  "tonic",
  "tonic-build",
@@ -298,6 +299,12 @@ dependencies = [
  "libc",
  "tokio",
 ]
+
+[[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "either"
@@ -1150,15 +1157,6 @@ name = "regex-syntax"
 version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
-
-[[package]]
-name = "rppal"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dc171bbe325b04172e18d917c58c2cf1fb5adfd9ffabb1d6b3d62ba4c1c1331"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "rustix"

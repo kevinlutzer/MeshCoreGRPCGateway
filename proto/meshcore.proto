@@ -19,7 +19,7 @@ message SendMessageRequest {
     uint32 channel_index      = 2;
   }
   string text      = 3;
-  uint32 timestamp = 4; // unix seconds; 0 = let server use current time
+  optional uint32 timestamp = 4; // unix seconds; 0 = let server use current time
 }
 message SendMessageResponse {
   bool   success = 1;
@@ -41,14 +41,8 @@ message ReceiveMessageResponse {
 // --- Reset ---
 // Drives a GPIO pin LOW for hold_ms milliseconds then releases it HIGH.
 // Intended to hard-reset the attached MeshCore radio module.
-message ResetRequest {
-  uint32 gpio_pin = 1; // BCM pin number
-  uint32 hold_ms  = 2; // default 200 if 0
-}
-message ResetResponse {
-  bool   success = 1;
-  string error   = 2;
-}
+message ResetRequest {}
+message ResetResponse {}
 
 // --- CreateContact ---
 // Wraps CommandHandler::add_contact.
