@@ -12,7 +12,7 @@ confinement: classic
 
 apps:
   meshhat-controller:
-    command: bin/meshhat-controller
+    command: bin/MeshHatController
     daemon: simple
     restart-condition: on-failure
 
