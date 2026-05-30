@@ -13,7 +13,7 @@ env:
  
 jobs:
   fmt-lint-build:
-    name: Format check
+    name: Format check, lint, and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
   snap:
     name: Snap build (LXD)
     runs-on: ubuntu-latest
-    needs: [fmt-lint-build]
+    # needs: []
     steps:
       - uses: actions/checkout@v4
  
@@ -60,4 +60,4 @@ jobs:
         uses: snapcore/action-build@v1
         id: snap-build
         with:
-          snapcraft-channel: latest/stable
+          snapcraft-channel: latest/edge
