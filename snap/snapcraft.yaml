@@ -17,12 +17,14 @@ apps:
     restart-condition: on-failure
 
 parts:
-  meshcore-grpc:
+  meshhat-controller:
     plugin: rust
     source: .
     build-packages:
       - pkg-config
       - libssl-dev
+      - protobuf-compiler
+      - libdbus-1-dev
       - protobuf-compiler
     stage-packages:
       - libssl3
