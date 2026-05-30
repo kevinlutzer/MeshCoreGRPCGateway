@@ -2,10 +2,9 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
-use tracing::{error, info};
 
 mod contact;
-mod healtcheck;
+mod healthcheck;
 mod message;
 mod util;
 
@@ -37,7 +36,7 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         &self,
         _request: Request<ReceiveMessageRequest>,
     ) -> Result<Response<ReceiveMessageResponse>, Status> {
-        receive_message(&self.commands, _request).await
+        receive_message(&self.commands).await
     }
 
     async fn send_message(
@@ -76,26 +75,6 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         &self,
         _request: Request<HealthcheckRequest>,
     ) -> Result<Response<HealthcheckResponse>, Status> {
-        info!("Healthcheck");
-
-        let cmd = self.commands.lock().await;
-        match cmd.send_appstart().await {
-            Ok(info) => {
-                info!(device = %info.name, "Healthcheck OK");
-                Ok(Response::new(HealthcheckResponse {
-                    ok: true,
-                    device_name: info.name,
-                    error: String::new(),
-                }))
-            }
-            Err(e) => {
-                error!(error = %e, "Healthcheck failed");
-                Ok(Response::new(HealthcheckResponse {
-                    ok: false,
-                    device_name: String::new(),
-                    error: e.to_string(),
-                }))
-            }
-        }
+        healthcheck::healthcheck(&self.commands).await
     }
 }

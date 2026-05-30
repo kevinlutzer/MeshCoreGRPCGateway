@@ -9,13 +9,12 @@ use tonic::{Request, Response, Status};
 use tracing::{error, info};
 
 use crate::meshcore_proto::{
-    ReceiveMessageRequest, ReceiveMessageResponse, SendMessageRequest, SendMessageResponse,
+    ReceiveMessageResponse, SendMessageRequest, SendMessageResponse,
     send_message_request::Destination as ProtoDestination,
 };
 
 pub async fn receive_message(
     commands: &Arc<Mutex<CommandHandler>>,
-    _request: Request<ReceiveMessageRequest>,
 ) -> Result<Response<ReceiveMessageResponse>, Status> {
     let cmd = commands.lock().await;
     let event_opt = cmd
