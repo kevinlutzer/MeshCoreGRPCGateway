@@ -1,9 +1,9 @@
-use std::path::PathBuf;
-
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 
+use hyper_util::rt::TokioIo;
 use tokio::net::UnixStream;
-use tonic::transport::{Channel, Endpoint};
+use tonic::transport::{Endpoint, Uri};
 use tower::service_fn;
 
 use crate::meshcore_proto::{ResetRequest, mesh_core_service_client::MeshCoreServiceClient};
@@ -31,27 +31,34 @@ enum Commands {
     Reset {},
 }
 
+async fn build_channel() -> anyhow::Result<tonic::transport::Channel> {
+    Endpoint::try_from("http://[::]:50051")?
+        .connect_with_connector(service_fn(|_: Uri| async {
+            let path = "/Users/kevinlutzer/Projects/MeshHatController/meshhat-controller/meshcore.sock";
+
+            // Connect to a Uds socket
+            Ok::<_, std::io::Error>(TokioIo::new(UnixStream::connect(path).await?))
+        }))
+        .await
+        .with_context(|| {"Failed to create the connector channel"})
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
 
-    let endpoint = Endpoint::try_from("http://[::]:50051")?;
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Reset{} => {
+            let channel = build_channel().await?;
+            let mut client = MeshCoreServiceClient::new(channel);
 
-    let channel = endpoint
-        .connect_with_connector(service_fn(move |_| {
-            async move {
-                let stream = UnixStream::connect("/Users/kevinlutzer/Projects/MeshHatController/meshhat-controller/meshcore.sock").await?;
-                Ok::<_, std::io::Error>(hyper_util::rt::TokioIo::new(stream))
-            }
-        }))
-        .await?;
+            let _ = client
+                .reset(ResetRequest {})
+                .await?;
 
-    let mut client = MeshCoreServiceClient::new(channel);
-
-    let response = client
-        .reset(ResetRequest {})
-        .await?;
-
-    println!("Response: {:?}", response.into_inner());
+            println!("Successfully reset the device");
+        }
+    }
 
     Ok(())
 }
