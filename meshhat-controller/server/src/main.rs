@@ -4,7 +4,7 @@ mod meshcore_proto {
     tonic::include_proto!("meshcore");
 }
 
-use tokio::net::UnixListener;
+use tokio::{signal,net::UnixListener};
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
 
@@ -17,6 +17,13 @@ use app_env::{
 };
 use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 use server::MeshCoreService;
+
+async fn shutdown_signal() {
+    signal::ctrl_c()
+        .await
+        .expect("Failed to install Ctrl+C handler");
+    println!("\nCtrl+C received — shutting down...");
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,16 +50,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let commands = meshcore.commands();
 
     // Verify connectivity and log the device name.
-    // let self_info = commands
-    //     .clone()
-    //     .lock()
-    //     .await
-    //     .send_appstart()
-    //     .await
-    //     .map_err(|e| {
-    //         error!(error = %e, "send_appstart failed – is the device connected?");
-    //         e
-    //     })?;
+    let self_info = commands
+        .clone()
+        .lock()
+        .await
+        .send_appstart()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "send_appstart failed – is the device connected?");
+            e
+        })?;
 
     // info!("Connected to MeshCore device {}", self_info.name);
 
@@ -65,9 +72,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(MeshCoreServiceServer::new(service))
-        .serve_with_incoming(incoming)
+        .serve_with_incoming_shutdown(incoming, shutdown_signal())
         .with_current_subscriber()
         .await?;
+
+    tokio::fs::remove_file(socket_path).await?;
+
+    info!("Service shutdown complete");
 
     Ok(())
 }

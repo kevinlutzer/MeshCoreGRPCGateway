@@ -6,7 +6,7 @@ use tokio::net::UnixStream;
 use tonic::transport::{Endpoint, Uri};
 use tower::service_fn;
 
-use crate::meshcore_proto::{ResetRequest, mesh_core_service_client::MeshCoreServiceClient};
+use crate::meshcore_proto::{HealthcheckRequest, ResetRequest, mesh_core_service_client::MeshCoreServiceClient};
 
 mod meshcore_proto {
     tonic::include_proto!("meshcore");
@@ -29,13 +29,15 @@ struct Cli {
 enum Commands {
     /// Resets the device
     Reset {},
+    /// Health check the device
+    Healthcheck {},
 }
 
 async fn build_channel() -> anyhow::Result<tonic::transport::Channel> {
     Endpoint::try_from("http://[::]:50051")?
         .connect_with_connector(service_fn(|_: Uri| async {
             let path =
-                "/Users/kevinlutzer/Projects/MeshHatController/meshhat-controller/meshcore.sock";
+                "/Users/kevinlutzer/Projects/MeshHatController/meshhat-controller/server/meshcore.sock";
 
             // Connect to a Uds socket
             Ok::<_, std::io::Error>(TokioIo::new(UnixStream::connect(path).await?))
@@ -47,14 +49,20 @@ async fn build_channel() -> anyhow::Result<tonic::transport::Channel> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
+    let channel = build_channel().await?;
+    let mut client = MeshCoreServiceClient::new(channel);
+
     match cli.command {
         Commands::Reset {} => {
-            let channel = build_channel().await?;
-            let mut client = MeshCoreServiceClient::new(channel);
-
             let _ = client.reset(ResetRequest {}).await?;
 
             println!("Successfully reset the device");
+        }
+        Commands::Healthcheck {} => {
+            let response = client.healthcheck(HealthcheckRequest{}).await?;
+
+            println!("Health check passed with device {}", response.into_inner().device_name);
         }
     }
 
