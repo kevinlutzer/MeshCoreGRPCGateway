@@ -101,15 +101,10 @@ pub async fn send_message(
 
     match result {
         Ok(()) => Ok(Response::new(SendMessageResponse {
-            success: true,
-            error: String::new(),
         })),
         Err(e) => {
             error!(error = %e, "Send message failed");
-            Ok(Response::new(SendMessageResponse {
-                success: false,
-                error: e.to_string(),
-            }))
+            Ok(Response::new(SendMessageResponse {}))
         }
     }
 }
