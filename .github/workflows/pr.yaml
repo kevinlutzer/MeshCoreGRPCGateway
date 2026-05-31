@@ -61,12 +61,3 @@ jobs:
         id: snap-build
         with:
           snapcraft-channel: latest/edge
-
-      - name: ls snap file
-        run: ls
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-report
-          path: output/test/code-coverage.html
