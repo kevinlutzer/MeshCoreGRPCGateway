@@ -3,11 +3,11 @@ mod server;
 mod meshcore_proto {
     tonic::include_proto!("meshcore");
 }
+use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 
 use tokio::{net::UnixListener, signal};
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
-
 use tracing::{error, info, instrument::WithSubscriber};
 
 use meshcore_rs::MeshCore;
@@ -16,7 +16,6 @@ use app_env::{
     get_baud_rate, get_serial_port, get_socket_path, load_or_create_env_file, setup_tracing,
 };
 
-use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 use server::MeshCoreService;
 
 async fn shutdown_signal() {
@@ -35,6 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = get_serial_port();
     let baud_rate = get_baud_rate();
     let socket_path = get_socket_path();
+
     info!(
         "Starting the service with serial port = {}, baud rate = {}, socket path = {}",
         port,
@@ -42,7 +42,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         socket_path.display()
     );
 
-    // ── Initialise MeshCore SDK over serial ──────────────────────────────────
     let meshcore = MeshCore::serial(&port, baud_rate).await.map_err(|e| {
         error!(error = %e, "Failed to open serial connection");
         e
