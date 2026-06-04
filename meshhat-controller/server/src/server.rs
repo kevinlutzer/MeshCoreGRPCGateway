@@ -6,12 +6,12 @@ use tonic::{Request, Response, Status};
 mod contact;
 mod healthcheck;
 mod message;
+mod reset;
 mod util;
 
 use meshcore_rs::commands::CommandHandler;
 
 use crate::server::message::{receive_message, send_message};
-
 use crate::meshcore_proto::{
     HealthcheckRequest, HealthcheckResponse, ReceiveMessageRequest, ReceiveMessageResponse,
     ResetRequest, ResetResponse, SendMessageRequest, SendMessageResponse,
@@ -47,15 +47,7 @@ impl MeshCoreServiceGrpc for MeshCoreService {
     }
 
     async fn reset(&self, _: Request<ResetRequest>) -> Result<Response<ResetResponse>, Status> {
-        let command = self.commands.lock().await;
-        command.reset().await.map_err(|e| {
-            error!(error = %e, "Failed to reset the device");
-            Status::internal("Failed to reset the device")
-        })?;
-
-        info!("Device reset successfully");
-
-        Ok(Response::new(ResetResponse {}))
+        reset::reset().await
     }
 
     async fn create_contact(

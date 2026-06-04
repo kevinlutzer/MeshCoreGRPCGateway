@@ -7,7 +7,7 @@ use tonic::transport::{Endpoint, Uri};
 use tower::service_fn;
 
 use crate::meshcore_proto::{
-    HealthcheckRequest, ResetRequest, mesh_core_service_client::MeshCoreServiceClient,
+    CreateContactRequest, DeleteContactRequest, HealthcheckRequest, ResetRequest, SearchContactRequest, mesh_core_service_client::MeshCoreServiceClient
 };
 
 mod meshcore_proto {
@@ -33,6 +33,25 @@ enum Commands {
     Reset {},
     /// Health check the device
     Healthcheck {},
+
+    /// Creates a contact
+    CreateContact {
+        public_key_hex: String,
+        name: String,
+        contact_type: u32,
+        flags: u32,
+        latitude: f64,
+        longitude: f64,
+    },
+    /// Deletes a contact with a specific hash
+    DeleteContact {
+        public_key_hex: String
+    },
+    /// Search a contact
+    SearchContact {
+        /// Criteria to search on
+        query: String
+    }
 }
 
 async fn build_channel() -> anyhow::Result<tonic::transport::Channel> {
@@ -58,9 +77,8 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Reset {} => {
             let _ = client.reset(ResetRequest {}).await?;
-
             println!("Successfully reset the device");
-        }
+        },
         Commands::Healthcheck {} => {
             let response = client.healthcheck(HealthcheckRequest {}).await?;
 
@@ -68,6 +86,31 @@ async fn main() -> anyhow::Result<()> {
                 "Health check passed with device {}",
                 response.into_inner().device_name
             );
+        },
+        Commands::SearchContact { query } => {
+            let response = client.search_contact(SearchContactRequest {
+                query,
+            }).await?;
+            for contact in response.into_inner().contacts {
+                println!("BLAH");
+            }
+        },
+        Commands::CreateContact { public_key_hex, name, contact_type, flags, latitude, longitude } => {
+            client.create_contact(CreateContactRequest {
+                public_key_hex,
+                name,
+                contact_type,
+                flags,
+                latitude,
+                longitude,
+            }).await?;
+
+            println!("Successfully created contact");
+        }
+        Commands::DeleteContact { public_key_hex } => {
+            client.delete_contact(DeleteContactRequest { public_key_hex, }).await?;
+
+            println!("Successfully deleted contact");
         }
     }
 
