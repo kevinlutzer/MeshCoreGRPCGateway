@@ -8,7 +8,7 @@ service MeshCoreService {
   rpc CreateContact  (CreateContactRequest)  returns (CreateContactResponse);
   rpc SearchContact  (SearchContactRequest)  returns (SearchContactResponse);
   rpc DeleteContact  (DeleteContactRequest)  returns (DeleteContactResponse);
-  rpc Healthcheck    (HealthcheckRequest)    returns (HealthcheckResponse);
+  rpc GetName    (GetNameRequest)    returns (GetNameResponse);
 }
 
 // --- SendMessage ---
@@ -82,9 +82,8 @@ message DeleteContactRequest {
 
 message DeleteContactResponse {}
 
-// --- Healthcheck ---
-// Calls send_appstart() and returns the device name on success.
-message HealthcheckRequest {}
-message HealthcheckResponse {
-  string device_name = 1;
+// --- GetName ---
+message GetNameRequest {}
+message GetNameResponse {
+  string name = 1;
 }

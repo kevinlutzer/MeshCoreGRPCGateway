@@ -6,6 +6,7 @@ use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 
 use tokio::signal;
 use tonic::transport::Server;
+use tonic_health::{ServingStatus, server::health_reporter};
 use tracing::{error, info, instrument::WithSubscriber};
 
 use meshcore_rs::MeshCore;
@@ -60,10 +61,15 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Connected to MeshCore device {}", self_info.name);
 
-    let service = MeshCoreService::new(commands);
+    let (health_reporter, health_server) = health_reporter();
+    health_reporter.set_serving::<MeshCoreServiceServer<MeshCoreService>>().await;
+    health_reporter.set_service_status("MeshCoreServiceServer", ServingStatus::Serving).await;
+
+    let service = MeshCoreService::new(commands, &self_info.name);
 
     let addr = get_addr()?;
     Server::builder()
+        .add_service(health_server)
         .add_service(MeshCoreServiceServer::new(service))
         .serve_with_shutdown(addr, shutdown_signal())
         .with_current_subscriber()

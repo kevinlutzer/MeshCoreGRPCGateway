@@ -7,7 +7,7 @@ use meshcore_rs::{
 
 use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::meshcore_proto::{
     ReceiveMessageResponse, SendMessageRequest, SendMessageResponse,
@@ -22,6 +22,8 @@ pub async fn receive_message(
         .get_msg()
         .await
         .map_err(|e| Status::internal(e.to_string()))?;
+
+    debug!("get_msg returned event: {:?}", event_opt);
 
     let Some(event) = event_opt else {
         return Ok(Response::new(ReceiveMessageResponse {

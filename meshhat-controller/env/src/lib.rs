@@ -12,7 +12,7 @@ const ENV_FILE_NAME: &str = "settings.ini";
 const SNAP_COMMON: &str = "SNAP_COMMON";
 /// Default environment settings. These can be manipulated by editing the settings.ini
 const DEFAULT_SETTINGS: &str =
-    "MESHCORE_BAUD_RATE=115200\nGRPC_LISTEN_ADDR=[::]:50051\nMESHCORE_SERIAL_PORT=/dev/ttyAMA0\n";
+    "GRPC_CLIENT_ADDR=https://127.0.0.1:50051\nMESHCORE_BAUD_RATE=115200\nGRPC_LISTEN_ADDR=[::]:50051\nMESHCORE_SERIAL_PORT=/dev/ttyAMA0\n";
 
 /// Gets the settings directory for the service.
 /// - For a snap this is the $SNAP_COMMON
@@ -57,7 +57,7 @@ pub async fn setup_tracing() {
 
 /// Returns the serial port or the default port from the settings.ini file
 pub fn get_serial_port() -> String {
-    var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev/ttyAMA".to_string())
+    var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev/cu.usbmodem1101".to_string())
 }
 
 /// Returns the baud rate or the default baud rate from the settings.ini file
@@ -68,6 +68,10 @@ pub fn get_baud_rate() -> u32 {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(115_200)
+}
+
+pub fn get_client_uri_str() -> String {
+    var("GRPC_CLIENT_ADDR").unwrap_or_else(|_| "https://127.0.0.1:50051".to_string())
 }
 
 pub fn get_addr_str() -> String {

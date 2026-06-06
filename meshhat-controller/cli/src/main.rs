@@ -1,12 +1,10 @@
 use crate::meshcore_proto::{
-    CreateContactRequest, DeleteContactRequest, HealthcheckRequest, ReceiveMessageRequest,
+    CreateContactRequest, DeleteContactRequest, GetNameRequest, ReceiveMessageRequest,
     ResetRequest, SearchContactRequest, SendMessageRequest,
     mesh_core_service_client::MeshCoreServiceClient, send_message_request::Destination,
 };
-use anyhow::Context;
 use clap::{Parser, Subcommand};
-use env::get_addr_str;
-use tonic::transport::Endpoint;
+use env::get_client_uri_str;
 
 mod meshcore_proto {
     tonic::include_proto!("meshcore");
@@ -25,8 +23,8 @@ enum Commands {
     /// Resets the device
     Reset {},
 
-    /// Health check the device
-    Healthcheck {},
+    /// Gets the name of the device
+    GetName {},
 
     /// Creates a contact
     CreateContact {
@@ -81,25 +79,23 @@ enum Commands {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    let addr_str = get_addr_str();
-    let endpoint = Endpoint::try_from(addr_str.clone())
-        .with_context(|| format!("Failed to parse gRPC listen address: {}", addr_str))?;
+    let addr_str = get_client_uri_str();
     let mut client: MeshCoreServiceClient<tonic::transport::Channel> =
-        MeshCoreServiceClient::connect(endpoint).await?;
+        MeshCoreServiceClient::connect(addr_str).await?;
 
     match cli.command {
         Commands::Reset {} => {
             let _ = client.reset(ResetRequest {}).await?;
             println!("Successfully reset the device");
-        }
+        },
 
-        Commands::Healthcheck {} => {
-            let response = client.healthcheck(HealthcheckRequest {}).await?;
+        Commands::GetName {} => {
+            let response = client.get_name(GetNameRequest {}).await?;
             println!(
-                "Health check passed with device {}",
-                response.into_inner().device_name
+                "Device name: {}",
+                response.into_inner().name
             );
-        }
+        },
 
         Commands::SearchContact { query, json } => {
             let contacts = client
@@ -132,7 +128,7 @@ async fn main() -> anyhow::Result<()> {
                     );
                 }
             }
-        }
+        },
 
         Commands::CreateContact {
             public_key_hex,
@@ -153,14 +149,14 @@ async fn main() -> anyhow::Result<()> {
                 })
                 .await?;
             println!("Successfully created contact");
-        }
+        },
 
         Commands::DeleteContact { public_key_hex } => {
             client
                 .delete_contact(DeleteContactRequest { public_key_hex })
                 .await?;
             println!("Successfully deleted contact");
-        }
+        },
 
         Commands::SendMessage {
             text,
@@ -184,7 +180,7 @@ async fn main() -> anyhow::Result<()> {
                 })
                 .await?;
             println!("Message sent successfully");
-        }
+        },
 
         Commands::ReceiveMessage { json } => {
             let msg = client

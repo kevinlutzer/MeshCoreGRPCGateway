@@ -4,15 +4,16 @@ use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
 
 mod contact;
-mod healthcheck;
+mod get_name;
 mod message;
 mod reset;
 mod util;
 
 use meshcore_rs::commands::CommandHandler;
 
+use crate::meshcore_proto::{GetNameRequest, GetNameResponse};
 use crate::meshcore_proto::{
-    HealthcheckRequest, HealthcheckResponse, ReceiveMessageRequest, ReceiveMessageResponse,
+    ReceiveMessageRequest, ReceiveMessageResponse,
     ResetRequest, ResetResponse, SendMessageRequest, SendMessageResponse,
     mesh_core_service_server::MeshCoreService as MeshCoreServiceGrpc,
 };
@@ -20,12 +21,14 @@ use crate::server::message::{receive_message, send_message};
 
 pub struct MeshCoreService {
     commands: Arc<Mutex<CommandHandler>>,
+    name: String,
 }
 
 impl MeshCoreService {
-    pub fn new(commands: &Arc<Mutex<CommandHandler>>) -> Self {
+    pub fn new(commands: &Arc<Mutex<CommandHandler>>, name: &str) -> Self {
         Self {
             commands: commands.clone(),
+            name: name.to_string(),
         }
     }
 }
@@ -71,10 +74,10 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         contact::delete_contact(&self.commands, request).await
     }
 
-    async fn healthcheck(
+    async fn get_name(
         &self,
-        _request: Request<HealthcheckRequest>,
-    ) -> Result<Response<HealthcheckResponse>, Status> {
-        healthcheck::healthcheck(&self.commands).await
+        _request: Request<GetNameRequest>,
+    ) -> Result<Response<GetNameResponse>, Status> {
+        get_name::get_name(&self.name).await
     }
 }

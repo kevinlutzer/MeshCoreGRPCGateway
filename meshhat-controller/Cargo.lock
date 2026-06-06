@@ -313,6 +313,7 @@ dependencies = [
  "tonic-prost",
  "tonic-prost-build",
  "tower",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1471,6 +1472,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build 0.12.3",
+ "tonic-health",
  "tonic-prost",
  "tonic-prost-build",
  "tracing",
@@ -1745,6 +1747,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tonic-health"
+version = "0.14.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcfab99db777fba2802f0dfa861d1628d1ae916fb199d29819941f139ae85082"
+dependencies = [
+ "prost 0.14.3",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-prost",
 ]
 
 [[package]]
