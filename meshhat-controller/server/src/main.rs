@@ -1,4 +1,4 @@
-mod app_env;
+
 mod server;
 mod meshcore_proto {
     tonic::include_proto!("meshcore");
@@ -11,7 +11,7 @@ use tracing::{error, info, instrument::WithSubscriber};
 
 use meshcore_rs::MeshCore;
 
-use app_env::{
+use env::{
     get_baud_rate, get_addr, get_serial_port, load_or_create_env_file, setup_tracing,
 };
 

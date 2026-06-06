@@ -1,11 +1,12 @@
 use anyhow::Context;
-use dotenv::from_filename;
+use dotenvy::from_filename;
 use std::{
     env::{current_dir, var},
     path::PathBuf,
     net::SocketAddr
 };
 use tokio::{fs::File, io::AsyncWriteExt};
+use tracing_subscriber::{fmt, EnvFilter};
 
 /// The name of the environment file that contains the service settings
 const ENV_FILE_NAME: &str = "settings.ini";
@@ -48,10 +49,10 @@ pub async fn load_or_create_env_file() -> anyhow::Result<()> {
 /// Sets up the tracing subscriber for logging.
 /// It uses the RUST_LOG environment variable to determine the log level, defaulting to "info" if not set.
 pub async fn setup_tracing() {
-    tracing_subscriber::fmt()
+    fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
 }
