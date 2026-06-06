@@ -304,16 +304,12 @@ dependencies = [
  "clap",
  "clap_derive",
  "env",
- "hyper-util",
  "prost 0.14.3",
  "serde_json",
  "tokio",
  "tonic",
- "tonic-build 0.12.3",
  "tonic-prost",
  "tonic-prost-build",
- "tower",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -391,12 +387,6 @@ dependencies = [
  "libc",
  "tokio",
 ]
-
-[[package]]
-name = "dotenv"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "dotenvy"
@@ -1461,10 +1451,8 @@ dependencies = [
  "anyhow",
  "clap",
  "clap_derive",
- "dotenv",
  "env",
  "hex",
- "hyper-util",
  "meshcore-rs",
  "prost 0.14.3",
  "serde_json",
@@ -1476,7 +1464,6 @@ dependencies = [
  "tonic-prost",
  "tonic-prost-build",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
