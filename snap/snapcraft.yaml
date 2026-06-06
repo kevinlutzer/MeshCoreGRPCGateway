@@ -30,10 +30,6 @@ parts:
       - libssl-dev
       - protobuf-compiler
       - libdbus-1-dev
-      - libgpiod2t64
-    stage-packages:
-      - libssl3
-      - libgpiod2t64
     organize:
       cli: bin/cli
       server: bin/server
