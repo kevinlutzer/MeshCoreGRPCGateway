@@ -12,37 +12,22 @@ const ENV_FILE_NAME: &str = "settings.ini";
 const SNAP_COMMON: &str = "SNAP_COMMON";
 /// Default environment settings. These can be manipulated by editing the settings.ini
 const DEFAULT_SETTINGS: &str =
-<<<<<<<< HEAD:meshhat-controller/env/src/lib.rs
     "GRPC_CLIENT_ADDR=https://127.0.0.1:50051\nMESHCORE_BAUD_RATE=115200\nGRPC_LISTEN_ADDR=[::]:50051\nMESHCORE_SERIAL_PORT=/dev/ttyAMA0\n";
-========
-    "MESHCORE_BAUD_RATE=115200\nGRPC_LISTEN_ADDR=[::]:50051\nMESHCORE_SERIAL_PORT=/dev/ttyAMA0\n";
->>>>>>>> main:meshhat-controller/server/src/app_env.rs
 
 /// Gets the settings directory for the service.
 /// - For a snap this is the $SNAP_COMMON
 /// - For local development or running the binary directly, this is the current working directory.
-<<<<<<<< HEAD:meshhat-controller/env/src/lib.rs
 fn get_working_dir() -> anyhow::Result<PathBuf> {
     match var(SNAP_COMMON).map(PathBuf::from) {
         Ok(dir) => Ok(dir),
         Err(_) => current_dir().with_context(|| "Failed to get the current directory")
     }
-========
-fn get_working_dir() -> PathBuf {
-    var(SNAP_COMMON)
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| current_dir().expect("Failed to get the current directory"))
->>>>>>>> main:meshhat-controller/server/src/app_env.rs
 }
 
 /// Loads the settings.ini file **or** creates it if it doesn't exist. This is used to load environment variables from the file for local development,
 /// and also to create the file with default values when running in a snap.
 pub async fn load_or_create_env_file() -> anyhow::Result<()> {
-<<<<<<<< HEAD:meshhat-controller/env/src/lib.rs
     let settings_dir = get_working_dir()?;
-========
-    let settings_dir = get_working_dir();
->>>>>>>> main:meshhat-controller/server/src/app_env.rs
     let env_file_path = settings_dir.join(ENV_FILE_NAME);
 
     if !env_file_path.exists() {
@@ -72,11 +57,7 @@ pub async fn setup_tracing() {
 
 /// Returns the serial port or the default port from the settings.ini file
 pub fn get_serial_port() -> String {
-<<<<<<<< HEAD:meshhat-controller/env/src/lib.rs
     var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev/cu.usbmodem1101".to_string())
-========
-    var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev//dev/ttyAMA".to_string())
->>>>>>>> main:meshhat-controller/server/src/app_env.rs
 }
 
 /// Returns the baud rate or the default baud rate from the settings.ini file
@@ -89,19 +70,12 @@ pub fn get_baud_rate() -> u32 {
         .unwrap_or(115_200)
 }
 
-<<<<<<<< HEAD:meshhat-controller/env/src/lib.rs
 pub fn get_client_uri_str() -> String {
     var("GRPC_CLIENT_ADDR").unwrap_or_else(|_| "https://127.0.0.1:50051".to_string())
 }
 
 pub fn get_addr_str() -> String {
     var("GRPC_LISTEN_ADDR").unwrap_or_else(|_| "[::]:50051".to_string())
-========
-/// Returns the socket path we bind the gRPC server
-pub fn get_socket_path() -> PathBuf {
-    let working_dir = get_working_dir();
-    working_dir.join("meshcore.sock")
->>>>>>>> main:meshhat-controller/server/src/app_env.rs
 }
 
 pub fn get_addr() -> anyhow::Result<SocketAddr> {
