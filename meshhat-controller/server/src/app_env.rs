@@ -3,6 +3,7 @@ use dotenv::from_filename;
 use std::{
     env::{current_dir, var},
     path::PathBuf,
+    net::SocketAddr
 };
 use tokio::{fs::File, io::AsyncWriteExt};
 
@@ -57,21 +58,21 @@ pub async fn setup_tracing() {
 
 /// Returns the serial port or the default port from the settings.ini file
 pub fn get_serial_port() -> String {
-    var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev//dev/ttyAMA".to_string())
+    var("MESHCORE_SERIAL_PORT").unwrap_or_else(|_| "/dev/ttyAMA".to_string())
 }
 
 /// Returns the baud rate or the default baud rate from the settings.ini file
 /// Defaults to 115200 if not set or if the value cannot be parsed as a u32
 /// This is used to configure the serial connection to the MeshCore device.
 pub fn get_baud_rate() -> u32 {
-    std::env::var("MESHCORE_BAUD_RATE")
+    var("MESHCORE_BAUD_RATE")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(115_200)
 }
 
-/// Returns the socket path we bind the gRPC server
-pub fn get_socket_path() -> PathBuf {
-    let working_dir = get_working_dir();
-    working_dir.join("meshcore.sock")
+
+pub fn get_addr() -> anyhow::Result<SocketAddr> {
+    let addr_str = var("GRPC_LISTEN_ADDR").unwrap_or_else(|_| "[::]:50051".to_string());
+    addr_str.parse::<std::net::SocketAddr>().with_context(|| format!("Failed to parse GRPC_LISTEN_ADDR: {}", addr_str))
 }

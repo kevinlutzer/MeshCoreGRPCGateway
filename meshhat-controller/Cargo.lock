@@ -1451,7 +1451,6 @@ dependencies = [
  "serde_json",
  "signal",
  "tokio",
- "tokio-stream",
  "tonic",
  "tonic-build 0.12.3",
  "tonic-prost",

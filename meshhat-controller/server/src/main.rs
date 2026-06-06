@@ -5,15 +5,14 @@ mod meshcore_proto {
 }
 use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 
-use tokio::{net::UnixListener, signal};
-use tokio_stream::wrappers::UnixListenerStream;
+use tokio::signal;
 use tonic::transport::Server;
 use tracing::{error, info, instrument::WithSubscriber};
 
 use meshcore_rs::MeshCore;
 
 use app_env::{
-    get_baud_rate, get_serial_port, get_socket_path, load_or_create_env_file, setup_tracing,
+    get_baud_rate, get_addr, get_serial_port, load_or_create_env_file, setup_tracing,
 };
 
 use server::MeshCoreService;
@@ -33,13 +32,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let port = get_serial_port();
     let baud_rate = get_baud_rate();
-    let socket_path = get_socket_path();
+
 
     info!(
-        "Starting the service with serial port = {}, baud rate = {}, socket path = {}",
+        "Starting the service with serial port = {}, baud rate = {}",
         port,
-        baud_rate,
-        socket_path.display()
+        baud_rate
     );
 
     let meshcore = MeshCore::serial(&port, baud_rate).await.map_err(|e| {
@@ -64,16 +62,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Connected to MeshCore device {}", self_info.name);
 
     let service = MeshCoreService::new(commands);
-    let listener = UnixListener::bind(&socket_path)?;
-    let incoming = UnixListenerStream::new(listener);
 
+    let addr = get_addr()?;
     Server::builder()
         .add_service(MeshCoreServiceServer::new(service))
-        .serve_with_incoming_shutdown(incoming, shutdown_signal())
+        .serve_with_shutdown(addr, shutdown_signal())
         .with_current_subscriber()
         .await?;
-
-    tokio::fs::remove_file(socket_path).await?;
 
     info!("Service shutdown complete");
 
