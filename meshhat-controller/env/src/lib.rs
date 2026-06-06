@@ -1,9 +1,7 @@
 use anyhow::Context;
 use dotenvy::from_filename;
 use std::{
-    env::{current_dir, var},
-    net::SocketAddr,
-    path::PathBuf,
+    env::{current_dir, var}, net::SocketAddr, path::PathBuf
 };
 use tokio::{fs::File, io::AsyncWriteExt};
 use tracing_subscriber::{EnvFilter, fmt};
@@ -19,16 +17,17 @@ const DEFAULT_SETTINGS: &str =
 /// Gets the settings directory for the service.
 /// - For a snap this is the $SNAP_COMMON
 /// - For local development or running the binary directly, this is the current working directory.
-fn get_working_dir() -> PathBuf {
-    var(SNAP_COMMON)
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| current_dir().expect("Failed to get the current directory"))
+fn get_working_dir() -> anyhow::Result<PathBuf> {
+    match var(SNAP_COMMON).map(PathBuf::from) {
+        Ok(dir) => Ok(dir),
+        Err(_) => current_dir().with_context(|| "Failed to get the current directory")
+    }
 }
 
 /// Loads the settings.ini file **or** creates it if it doesn't exist. This is used to load environment variables from the file for local development,
 /// and also to create the file with default values when running in a snap.
 pub async fn load_or_create_env_file() -> anyhow::Result<()> {
-    let settings_dir = get_working_dir();
+    let settings_dir = get_working_dir()?;
     let env_file_path = settings_dir.join(ENV_FILE_NAME);
 
     if !env_file_path.exists() {

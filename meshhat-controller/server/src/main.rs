@@ -15,14 +15,18 @@ use env::{get_addr, get_baud_rate, get_serial_port, load_or_create_env_file, set
 use server::MeshCoreService;
 
 async fn shutdown_signal() {
+    // we have to expect here because the overall function signature requires us to 
+    // to **not** return a result
+    #[allow(clippy::expect_used)]
     signal::ctrl_c()
         .await
         .expect("Failed to install Ctrl+C handler");
-    println!("\nCtrl+C received — shutting down...");
+
+    info!("Ctrl+C received — shutting down...");
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     load_or_create_env_file().await?;
 
     setup_tracing().await;

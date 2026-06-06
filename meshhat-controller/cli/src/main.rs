@@ -6,10 +6,7 @@ use crate::meshcore_proto::{
 use anyhow::Context;
 use clap::{Parser, Subcommand};
 use env::get_addr_str;
-use hyper_util::rt::TokioIo;
-use tokio::net::UnixStream;
-use tonic::transport::{Endpoint, Uri};
-use tower::service_fn;
+use tonic::transport::Endpoint;
 
 mod meshcore_proto {
     tonic::include_proto!("meshcore");

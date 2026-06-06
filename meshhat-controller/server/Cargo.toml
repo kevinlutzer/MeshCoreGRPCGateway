@@ -25,3 +25,6 @@ env = { path = "../env" }
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"
+
+[lints]
+workspace = true

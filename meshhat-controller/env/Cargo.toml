@@ -8,3 +8,6 @@ anyhow = "1.0.102"
 dotenvy = "0.15.7"
 tokio = { version = "1.52.3", features = ["fs", "io-std"] }
 tracing-subscriber = "0.3.23"
+
+[lints]
+workspace = true
