@@ -88,7 +88,6 @@ pub async fn search_contact(
     Ok(Response::new(SearchContactResponse { contacts }))
 }
 
-// ── DeleteContact ─────────────────────────────────────────────────────────
 pub async fn delete_contact(
     command: &Arc<Mutex<CommandHandler>>,
     request: Request<DeleteContactRequest>,

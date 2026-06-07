@@ -4,28 +4,30 @@ use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
 
 mod contact;
-mod healthcheck;
+mod get_name;
 mod message;
+mod reset;
 mod util;
 
 use meshcore_rs::commands::CommandHandler;
 
-use crate::server::message::{receive_message, send_message};
-
+use crate::meshcore_proto::{GetNameRequest, GetNameResponse};
 use crate::meshcore_proto::{
-    HealthcheckRequest, HealthcheckResponse, ReceiveMessageRequest, ReceiveMessageResponse,
-    ResetRequest, ResetResponse, SendMessageRequest, SendMessageResponse,
-    mesh_core_service_server::MeshCoreService as MeshCoreServiceGrpc,
+    ReceiveMessageRequest, ReceiveMessageResponse, ResetRequest, ResetResponse, SendMessageRequest,
+    SendMessageResponse, mesh_core_service_server::MeshCoreService as MeshCoreServiceGrpc,
 };
+use crate::server::message::{receive_message, send_message};
 
 pub struct MeshCoreService {
     commands: Arc<Mutex<CommandHandler>>,
+    name: String,
 }
 
 impl MeshCoreService {
-    pub fn new(commands: &Arc<Mutex<CommandHandler>>) -> Self {
+    pub fn new(commands: &Arc<Mutex<CommandHandler>>, name: &str) -> Self {
         Self {
             commands: commands.clone(),
+            name: name.to_string(),
         }
     }
 }
@@ -47,15 +49,7 @@ impl MeshCoreServiceGrpc for MeshCoreService {
     }
 
     async fn reset(&self, _: Request<ResetRequest>) -> Result<Response<ResetResponse>, Status> {
-        let command = self.commands.lock().await;
-        command.reset().await.map_err(|e| {
-            error!(error = %e, "Failed to reset the device");
-            Status::internal("Failed to reset the device")
-        })?;
-
-        info!("Device reset successfully");
-
-        Ok(Response::new(ResetResponse {}))
+        reset::reset().await
     }
 
     async fn create_contact(
@@ -79,10 +73,10 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         contact::delete_contact(&self.commands, request).await
     }
 
-    async fn healthcheck(
+    async fn get_name(
         &self,
-        _request: Request<HealthcheckRequest>,
-    ) -> Result<Response<HealthcheckResponse>, Status> {
-        healthcheck::healthcheck(&self.commands).await
+        _request: Request<GetNameRequest>,
+    ) -> Result<Response<GetNameResponse>, Status> {
+        get_name::get_name(&self.name).await
     }
 }

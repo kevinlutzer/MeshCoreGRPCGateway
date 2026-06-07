@@ -1,47 +1,45 @@
-mod app_env;
 mod server;
 mod meshcore_proto {
     tonic::include_proto!("meshcore");
 }
+use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
 
-use tokio::{net::UnixListener, signal};
-use tokio_stream::wrappers::UnixListenerStream;
+use tokio::signal;
 use tonic::transport::Server;
-
+use tonic_health::{ServingStatus, server::health_reporter};
 use tracing::{error, info, instrument::WithSubscriber};
 
 use meshcore_rs::MeshCore;
 
-use app_env::{
-    get_baud_rate, get_serial_port, get_socket_path, load_or_create_env_file, setup_tracing,
-};
-use meshcore_proto::mesh_core_service_server::MeshCoreServiceServer;
+use env::{get_addr, get_baud_rate, get_serial_port, load_or_create_env_file, setup_tracing};
+
 use server::MeshCoreService;
 
 async fn shutdown_signal() {
+    // we have to expect here because the overall function signature requires us to
+    // to **not** return a result
+    #[allow(clippy::expect_used)]
     signal::ctrl_c()
         .await
         .expect("Failed to install Ctrl+C handler");
-    println!("\nCtrl+C received — shutting down...");
+
+    info!("Ctrl+C received — shutting down...");
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     load_or_create_env_file().await?;
 
     setup_tracing().await;
 
     let port = get_serial_port();
     let baud_rate = get_baud_rate();
-    let socket_path = get_socket_path();
+
     info!(
-        "Starting the service with serial port = {}, baud rate = {}, socket path = {}",
-        port,
-        baud_rate,
-        socket_path.display()
+        "Starting the service with serial port = {}, baud rate = {}",
+        port, baud_rate
     );
 
-    // ── Initialise MeshCore SDK over serial ──────────────────────────────────
     let meshcore = MeshCore::serial(&port, baud_rate).await.map_err(|e| {
         error!(error = %e, "Failed to open serial connection");
         e
@@ -61,22 +59,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             e
         })?;
 
-    // info!("Connected to MeshCore device {}", self_info.name);
+    info!("Connected to MeshCore device {}", self_info.name);
 
-    let service = MeshCoreService::new(commands);
+    let (health_reporter, health_server) = health_reporter();
+    health_reporter
+        .set_serving::<MeshCoreServiceServer<MeshCoreService>>()
+        .await;
+    health_reporter
+        .set_service_status("MeshCoreServiceServer", ServingStatus::Serving)
+        .await;
 
-    // info!(%socket_path.display(), "gRPC server listening");
+    let service = MeshCoreService::new(commands, &self_info.name);
 
-    let listener = UnixListener::bind(&socket_path)?;
-    let incoming = UnixListenerStream::new(listener);
-
+    let addr = get_addr()?;
     Server::builder()
+        .add_service(health_server)
         .add_service(MeshCoreServiceServer::new(service))
-        .serve_with_incoming_shutdown(incoming, shutdown_signal())
+        .serve_with_shutdown(addr, shutdown_signal())
         .with_current_subscriber()
         .await?;
-
-    tokio::fs::remove_file(socket_path).await?;
 
     info!("Service shutdown complete");
 
