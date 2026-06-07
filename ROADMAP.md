@@ -15,6 +15,10 @@ This document outlines the current state and planned features for the MeshCoreGR
 
 ## Upcoming Features
 
+### Configuration Support via Snapd
+
+Implement
+
 ### Remote DFU (Device Firmware Update)
 
 Implement Device Firmware Update capabilities firmware updates for MeshCore devices without requiring physical access to the hardware.
@@ -41,6 +45,7 @@ Add support for hardware reset functionality through GPIO (General Purpose Input
 
 ### Phase 1: Core Functionality Expansion
 
+- [ ] Automatic configuration via snapd
 - [ ] Remote DFU implementation
 - [ ] GPIO Reset support
 - [ ] Enhanced error handling and diagnostics
