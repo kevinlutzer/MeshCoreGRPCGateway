@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use meshcore_rs::{
-    Error, EventPayload, EventType,
+    EventPayload, EventType,
     commands::{CommandHandler, Destination},
 };
 
@@ -16,11 +16,13 @@ use crate::meshcore_proto::{
 pub async fn receive_message(
     commands: &Arc<Mutex<CommandHandler>>,
 ) -> Result<Response<ReceiveMessageResponse>, Status> {
-    let cmd = commands.lock().await;
-    let event_opt = cmd
-        .get_msg()
-        .await
-        .map_err(|e| Status::internal(e.to_string()))?;
+    let event_opt = {
+        let cmd = commands.lock().await;
+        cmd.get_msg().await.map_err(|e| {
+            error!(error = %e, "get_msg failed");
+            Status::internal("Failed to get message")
+        })?
+    };
 
     debug!("get_msg returned event: {:?}", event_opt);
 
@@ -41,6 +43,7 @@ pub async fn receive_message(
                     }))
                 }
             } else {
+                error!("ContactMsgRecv event missing payload");
                 return Err(Status::internal("ContactMsgRecv event missing payload"));
             }
         }
@@ -54,10 +57,12 @@ pub async fn receive_message(
                     }))
                 }
             } else {
+                error!("ChannelMsgRecv event missing payload");
                 return Err(Status::internal("ChannelMsgRecv event missing payload"));
             }
         }
         other => {
+            error!("Received non-message event: {:?}", other);
             return Err(Status::internal(format!(
                 "unexpected event type from get_msg: {other:?}"
             )));
@@ -80,35 +85,31 @@ pub async fn send_message(
     } else {
         None
     };
-
-    let cmd = command.lock().await;
-    let result = match req.destination {
-        Some(ProtoDestination::ContactPubkeyHex(ref hex)) => {
-
-            let result: Result<(), Error> = cmd
-                .send_msg(Destination::Hex(hex.to_string()), text, timestamp)
-                .await
-                .map(|_| ());
-            result
-        }
-        Some(ProtoDestination::ChannelIndex(idx)) => {
-            let result: Result<(), Error> = cmd.send_channel_msg(idx as u8, text, timestamp).await;
-            result
-        }
-        None => {
-            return Err(Status::invalid_argument(
-                "destination must be set (contact_pubkey_hex or channel_index)",
-            ));
+    
+    let result = {
+        let cmd = command.lock().await;
+        match req.destination {
+            Some(ProtoDestination::ContactPubkeyHex(ref hex)) => {
+                cmd
+                    .send_msg(Destination::Hex(hex.to_string()), text, timestamp)
+                    .await
+                    .map(|_| ())
+            }
+            Some(ProtoDestination::ChannelIndex(idx)) => {
+                cmd.send_channel_msg(idx as u8, text, timestamp).await
+            }
+            None => {
+                return Err(Status::invalid_argument(
+                    "destination must be set (contact_pubkey_hex or channel_index)",
+                ));
+            }
         }
     };
 
-    drop(cmd);
-
-    match result {
-        Ok(()) => Ok(Response::new(SendMessageResponse {})),
-        Err(e) => {
-            error!(error = %e, "Send message failed");
-            Ok(Response::new(SendMessageResponse {}))
-        }
+    if let Err(ref e) = result {
+        error!(error = %e, "Send message failed");
+        Err(Status::internal("Failed to send message "))
+    } else {
+        Ok(Response::new(SendMessageResponse {}))
     }
 }
