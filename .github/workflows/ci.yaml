@@ -104,6 +104,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: snap-build-artifacts
+          path: *.snap
 
       - uses: snapcore/action-publish@v1
         env:
