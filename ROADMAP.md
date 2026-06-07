@@ -4,7 +4,7 @@ This document outlines the current state and planned features for the MeshCoreGR
 
 ## Current State
 
-### ✅ Completed Features
+### Completed Features
 
 - **CLI Tool** - Full-featured command-line interface for interacting with the MeshCore system
 - **gRPC Service** - Robust gRPC server implementation for remote control and management
@@ -16,67 +16,33 @@ This document outlines the current state and planned features for the MeshCoreGR
 
 ### Remote DFU (Device Firmware Update)
 
-Implement remote Device Firmware Update capabilities to allow over-the-air firmware updates for MeshCore devices without requiring physical access to the hardware.
+Implement Device Firmware Update capabilities firmware updates for MeshCore devices without requiring physical access to the hardware.
 
 **Goals:**
-- Enable remote firmware updates through the gRPC gateway
-- Support for multiple devices simultaneously
+
+- Enable remote DFU through the gRPC gateway
 - Progress tracking and status reporting
 - Rollback capabilities for failed updates
-- Verification of firmware integrity post-update
-
-**Expected Impact:**
-- Simplified device maintenance and management
-- Reduced downtime for firmware updates
-- Improved security through timely security patches
+- DFU will be backed by OpenOCD
 
 ### GPIO Reset Support
 
 Add support for hardware reset functionality through GPIO (General Purpose Input/Output) control on MeshHat devices.
 
 **Goals:**
+
 - Implement GPIO pin control through the gRPC API
 - Support for hardware reset sequences
-- Safe reset procedures with validation
-- Configuration options for different GPIO pin layouts
 - Status monitoring for reset operations
-
-**Expected Impact:**
-- Enhanced device control capabilities
-- Support for hardware troubleshooting
-- Better integration with MeshHat hardware
 
 ## Planned Enhancements
 
 ### Phase 1: Core Functionality Expansion
+
 - [ ] Remote DFU implementation
 - [ ] GPIO Reset support
 - [ ] Enhanced error handling and diagnostics
 - [ ] Improved logging and debugging capabilities
-
-### Phase 2: Reliability & Performance
-- [ ] Performance optimization and benchmarking
-- [ ] Connection pooling and resource management
-- [ ] Graceful shutdown and recovery mechanisms
-- [ ] Rate limiting and request queuing
-
-### Phase 3: Security
-- [ ] Authentication mechanisms
-- [ ] Authorization and access control
-- [ ] TLS/SSL support for secure communication
-- [ ] API key management
-
-### Phase 4: Observability
-- [ ] Structured logging
-- [ ] Metrics collection (Prometheus compatible)
-- [ ] Health check endpoints
-- [ ] Distributed tracing support
-
-### Phase 5: Documentation & DevEx
-- [ ] API documentation generation
-- [ ] Developer guides and examples
-- [ ] Architecture documentation
-- [ ] Troubleshooting guides
 
 ## Ongoing Maintenance
 
@@ -89,7 +55,5 @@ Add support for hardware reset functionality through GPIO (General Purpose Input
 ## Contributing
 
 We welcome community contributions! If you're interested in working on any of these features, please open an issue or submit a pull request.
-
----
 
 Last Updated: June 2026
