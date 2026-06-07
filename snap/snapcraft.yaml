@@ -37,3 +37,4 @@ parts:
     organize:
       cli: bin/cli
       server: bin/server
+      snap_install: snap/hooks/install

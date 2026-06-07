@@ -34,6 +34,10 @@ sudo lxd init --auto
 sudo usermod -a -G lxd $USER newgrp lxd
 ```
 
+Alternatively you can run `sudo just bootstrap` to execute the above commands.
+ Note that if you want to build this snap on a remote agent, you need to follow
+ the same steps on that agent.
+
 ## Installing Dependencies
 
 Install rust cargo (the package manager for rust) and just:

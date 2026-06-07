@@ -10,7 +10,8 @@ This document outlines the current state and planned features for the MeshCoreGR
 - **gRPC Service** - Robust gRPC server implementation for remote control and management
 - **Message Transport** - Ability to send and receive messages through private devices and channels
 - **Snapcraft Integration** - Working `snapcraft.yaml` configuration for building and distributing the snap
-- **Snap Packaging** - Complete support for creating installable snap packages
+- **Snap Packaging** - Complete support for creating installable snap packages. This includes an
+ `install` and `configure` hook for initializing the snap.
 
 ## Upcoming Features
 
@@ -23,17 +24,18 @@ Implement Device Firmware Update capabilities firmware updates for MeshCore devi
 - Enable remote DFU through the gRPC gateway
 - Progress tracking and status reporting
 - Rollback capabilities for failed updates
-- DFU will be backed by OpenOCD
+- DFU will be backed by OpenOCD using an SWD interface.
 
 ### GPIO Reset Support
 
-Add support for hardware reset functionality through GPIO (General Purpose Input/Output) control on MeshHat devices.
+Add support for hardware reset functionality through GPIO (General Purpose Input/Output) control on MeshCore devices.
+ This will be backed by libgiod V2 and gpio chip.
 
 **Goals:**
 
 - Implement GPIO pin control through the gRPC API
 - Support for hardware reset sequences
-- Status monitoring for reset operations
+- Monitoring for reset operations to verify successful reset
 
 ## Planned Enhancements
 
