@@ -4,10 +4,17 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.93.0"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "snap_install"
+path = "src/bin/snap_install.rs"
+
 [dependencies]
 anyhow = "1.0.102"
 dotenvy = "0.15.7"
-tokio = { version = "1.52.3", features = ["fs", "io-std"] }
+tokio = { version = "1.52.3", features = ["fs", "rt-multi-thread", "io-util", "macros"] }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [lints]

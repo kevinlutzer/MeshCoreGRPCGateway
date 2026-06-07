@@ -16,3 +16,13 @@ remote-snap remote_user="" remote_host="":
     ssh {{remote_user}}@{{remote_host}} "rm -rf /tmp/{{project_name}} && mkdir -p /tmp/{{project_name}} && tar -xzf /tmp/snap.tar.gz -C /tmp/{{project_name}} && cd /tmp/{{project_name}} && snapcraft"
     scp {{remote_user}}@{{remote_host}}:/tmp/{{project_name}}/*.snap .
     rm /tmp/snap.tar.gz
+
+# Sets up either an agent or the current device for snap building
+bootstrap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    sudo snap install lxd --classic
+    sudo snap install snapcraft --classic
+    sudo lxd init --auto
+    sudo usermod -a -G lxd $USER newgrp lxd

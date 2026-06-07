@@ -25,6 +25,21 @@ fn get_working_dir() -> anyhow::Result<PathBuf> {
     }
 }
 
+/// Creates an settings.ini file with default values. This is used to create the file when running in a snap, since the file won't exist and we want to have default values for the environment variables.
+pub async fn init_env() -> anyhow::Result<()> {
+    let settings_dir = get_working_dir()?;
+    let env_file_path = settings_dir.join(ENV_FILE_NAME);
+
+    let mut file = File::create(&env_file_path)
+        .await
+        .with_context(|| "Failed to create settings.ini file")?;
+    file.write_all(DEFAULT_SETTINGS.as_bytes())
+        .await
+        .with_context(|| "Failed to write default settings.ini content")?;
+
+    Ok(())
+}
+
 /// Loads the settings.ini file **or** creates it if it doesn't exist. This is used to load environment variables from the file for local development,
 /// and also to create the file with default values when running in a snap.
 pub async fn load_or_create_env_file() -> anyhow::Result<()> {
