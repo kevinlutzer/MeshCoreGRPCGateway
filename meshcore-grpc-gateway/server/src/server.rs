@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::ReceiverStream;
-use tokio_util::sync::CancellationToken;
 use tonic::{Request, Response, Status};
 
 mod contact;
@@ -54,17 +53,9 @@ impl MeshCoreServiceGrpc for MeshCoreService {
 
     async fn watch_messages(
         &self,
-        request: tonic::Request<WatchMessagesRequest>,
+        _request: tonic::Request<WatchMessagesRequest>,
     ) -> Result<tonic::Response<Self::WatchMessagesStream>, tonic::Status> {
-        let polling_delay_ms = request.into_inner().polling_delay_ms.unwrap_or(1000);
-        let (tx, rx) = tokio::sync::mpsc::channel(128);
-        let token = CancellationToken::new();
-
-        message::watch_messages(&self.commands, tx, polling_delay_ms, token.clone()).await;
-        // Token is held by the server; when response is dropped, task continues
-        // But client disconnect (rx closed) will break the loop
-        
-        Ok(Response::new(ReceiverStream::new(rx)))
+        Err(Status::unimplemented("Not yet implemented"))
     }
 
     async fn reset(&self, _: Request<ResetRequest>) -> Result<Response<ResetResponse>, Status> {

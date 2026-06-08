@@ -1,9 +1,10 @@
 use crate::meshcore_proto::{
     CreateContactRequest, DeleteContactRequest, GetInfoRequest, ReceiveMessageRequest,
     ReceiveMessageResponse, ResetRequest, SearchContactRequest, SendMessageRequest,
-    mesh_core_service_client::MeshCoreServiceClient,
-    receive_message_response::Payload, send_message_request::Destination,
+    mesh_core_service_client::MeshCoreServiceClient, receive_message_response::Payload,
+    send_message_request::Destination,
 };
+
 use clap::{Parser, Subcommand};
 use prost_types::Timestamp;
 

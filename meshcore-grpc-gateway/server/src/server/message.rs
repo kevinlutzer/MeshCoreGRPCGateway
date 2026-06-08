@@ -6,7 +6,6 @@ use meshcore_rs::{
     commands::{CommandHandler, Destination},
 };
 
-use tokio_util::sync::CancellationToken;
 use tokio::sync::Mutex;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info};
@@ -115,34 +114,4 @@ pub async fn send_message(
     } else {
         Ok(Response::new(SendMessageResponse {}))
     }
-}
-
-pub async fn watch_messages(
-    command: &Arc<Mutex<CommandHandler>>,
-    tx: tokio::sync::mpsc::Sender<Result<ReceiveMessageResponse, Status>>,
-    polling_delay_ms: u64,
-    token: CancellationToken
-) {
-    let cloned_command = command.clone();
-    
-    tokio::spawn(async move {
-        loop {
-            tokio::select! {
-                // _ = token.cancelled() => {
-                //     info!("WatchMessages task cancelled");
-                //     break;
-                // }
-                _ = tokio::time::sleep(
-                    std::time::Duration::from_millis(polling_delay_ms)
-                ) => {
-                    if let Ok(msg) = poll_message(&cloned_command).await {
-                        if tx.send(Ok(msg)).await.is_err() {
-                            // Client disconnected
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    });
 }
