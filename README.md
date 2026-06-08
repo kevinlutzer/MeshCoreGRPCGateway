@@ -1,6 +1,9 @@
 # MeshCoreGRPCGateway
 
-A snap that serves a gRPC server for controlling the MeshCore system on a MeshHat.
+A snapcraft snap that serves a gRPC server for controlling
+ a MeshCore companion device via Serial over USB.
+
+<img src="./assets/meshcore_grpc_gateway_icon.svg" alt="MeshCore GRPC Gateway" width="480"/>
 
 ## Table of Contents
 

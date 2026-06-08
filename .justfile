@@ -13,7 +13,7 @@ remote-snap remote_user="" remote_host="":
 
     tar -czf /tmp/snap.tar.gz snap/ {{project_name}}/
     scp /tmp/snap.tar.gz {{remote_user}}@{{remote_host}}:/tmp/snap.tar.gz
-    ssh {{remote_user}}@{{remote_host}} "rm -rf /tmp/{{project_name}} && mkdir -p /tmp/{{project_name}} && tar -xzf /tmp/snap.tar.gz -C /tmp/{{project_name}} && cd /tmp/{{project_name}} && snapcraft"
+    ssh {{remote_user}}@{{remote_host}} "rm -rf /tmp/{{project_name}} && mkdir -p /tmp/{{project_name}} && tar -xzf /tmp/snap.tar.gz -C /tmp/{{project_name}} && cd /tmp/{{project_name}} && sudo snapcraft"
     scp {{remote_user}}@{{remote_host}}:/tmp/{{project_name}}/*.snap .
     rm /tmp/snap.tar.gz
 
