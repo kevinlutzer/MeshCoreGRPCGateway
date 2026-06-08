@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
+use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 
 mod contact;
-mod get_name;
+mod info;
 mod message;
 mod reset;
 mod util;
 
 use meshcore_rs::commands::CommandHandler;
 
-use crate::meshcore_proto::{GetNameRequest, GetNameResponse};
 use crate::meshcore_proto::{
-    ReceiveMessageRequest, ReceiveMessageResponse, ResetRequest, ResetResponse, SendMessageRequest,
-    SendMessageResponse, mesh_core_service_server::MeshCoreService as MeshCoreServiceGrpc,
+    GetInfoRequest, GetInfoResponse, ReceiveMessageRequest, ReceiveMessageResponse, ResetRequest,
+    ResetResponse, SendMessageRequest, SendMessageResponse, WatchMessagesRequest,
+    mesh_core_service_server::MeshCoreService as MeshCoreServiceGrpc,
 };
 use crate::server::message::{receive_message, send_message};
 
@@ -34,6 +35,8 @@ impl MeshCoreService {
 
 #[tonic::async_trait]
 impl MeshCoreServiceGrpc for MeshCoreService {
+    type WatchMessagesStream = ReceiverStream<Result<ReceiveMessageResponse, Status>>;
+
     async fn receive_message(
         &self,
         _request: Request<ReceiveMessageRequest>,
@@ -46,6 +49,13 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         request: Request<SendMessageRequest>,
     ) -> Result<Response<SendMessageResponse>, Status> {
         send_message(&self.commands, request).await
+    }
+
+    async fn watch_messages(
+        &self,
+        _request: tonic::Request<WatchMessagesRequest>,
+    ) -> Result<tonic::Response<Self::WatchMessagesStream>, tonic::Status> {
+        Err(Status::unimplemented("Not yet implemented"))
     }
 
     async fn reset(&self, _: Request<ResetRequest>) -> Result<Response<ResetResponse>, Status> {
@@ -73,10 +83,10 @@ impl MeshCoreServiceGrpc for MeshCoreService {
         contact::delete_contact(&self.commands, request).await
     }
 
-    async fn get_name(
+    async fn get_info(
         &self,
-        _request: Request<GetNameRequest>,
-    ) -> Result<Response<GetNameResponse>, Status> {
-        get_name::get_name(&self.name).await
+        _request: Request<GetInfoRequest>,
+    ) -> Result<Response<GetInfoResponse>, Status> {
+        info::get_info(&self.name).await
     }
 }

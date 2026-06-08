@@ -70,8 +70,8 @@ async fn main() -> anyhow::Result<()> {
         .await;
 
     let service = MeshCoreService::new(commands, &self_info.name);
-
     let addr = get_addr()?;
+
     Server::builder()
         .add_service(health_server)
         .add_service(MeshCoreServiceServer::new(service))
