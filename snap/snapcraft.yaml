@@ -30,8 +30,9 @@ parts:
     source: meshcore-grpc-gateway
     build-packages:
       - pkg-config
-      - libssl-dev
       - protobuf-compiler
+      - libssl-dev
+      - libprotobuf-dev
       - libdbus-1-dev
 
     organize:
